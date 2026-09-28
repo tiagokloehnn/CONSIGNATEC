@@ -1,0 +1,6 @@
+{
+  "name": "Consignatec - Central de Ferramentas",
+  "description": "Plataforma oficial Consignatec: Central de ferramentas e utilitários financeiros para planejamento, crédito e orçamentos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

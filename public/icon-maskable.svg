@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="maskGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f766e" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14b8a6" />
+      <stop offset="100%" stop-color="#0d9488" />
+    </linearGradient>
+  </defs>
+
+  <!-- Full Bleed Background for Maskable Icon -->
+  <rect width="512" height="512" fill="url(#maskGrad)" />
+
+  <!-- Inner safe zone (approx central 75%) -->
+  <!-- Wallet Body Base scaled safely inside central circle -->
+  <g transform="translate(40, 40) scale(0.84)">
+    <circle cx="256" cy="256" r="180" fill="#ffffff" fill-opacity="0.04" />
+    <rect x="116" y="152" width="280" height="208" rx="36" fill="url(#cardGrad)" stroke="#5eead4" stroke-width="4" stroke-opacity="0.4" />
+    <path d="M120 196 Q256 210 392 196" stroke="#99f6e4" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.5" />
+    <path d="M168 290 L212 246 L252 270 L316 206" fill="none" stroke="#ffffff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" />
+    <polyline points="296 206 316 206 316 226" fill="none" stroke="#ffffff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" />
+    
+    <rect x="296" y="224" width="108" height="64" rx="20" fill="#0f766e" stroke="#5eead4" stroke-width="4" />
+    <circle cx="364" cy="256" r="14" fill="#fbbf24" stroke="#fef08a" stroke-width="3" />
+    <circle cx="364" cy="256" r="5" fill="#d97706" />
+
+    <path d="M374 120 L380 134 L394 140 L380 146 L374 160 L368 146 L354 140 L368 134 Z" fill="#38bdf8" opacity="0.9" />
+    <path d="M136 124 L140 134 L150 138 L140 142 L136 152 L132 142 L122 138 L132 134 Z" fill="#34d399" opacity="0.8" />
+  </g>
+</svg>

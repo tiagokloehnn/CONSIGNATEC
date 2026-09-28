@@ -1,0 +1,73 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with authentication and contact information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "name": { "type": "string", "maxLength": 256 },
+        "phone": { "type": "string", "maxLength": 64 },
+        "photoURL": { "type": "string", "maxLength": 1024 },
+        "passwordHash": { "type": "string", "maxLength": 512 },
+        "authProvider": { "type": "string", "maxLength": 32 },
+        "isGuest": { "type": "boolean" },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "email", "name"]
+    },
+    "FinancialProfile": {
+      "title": "FinancialProfile",
+      "description": "User overall financial configuration, income, added months, and categories",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "baseIncome": { "type": "number" },
+        "monthlyIncomes": { "type": "object" },
+        "currentMonth": { "type": "string", "maxLength": 64 },
+        "activeMonths": { "type": "array" },
+        "categories": { "type": "array" },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["userId", "baseIncome"]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "Individual financial expense entry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "data": { "type": "string", "maxLength": 32 },
+        "descricao": { "type": "string", "maxLength": 256 },
+        "categoria": { "type": "string", "maxLength": 128 },
+        "forma_pagamento": { "type": "string", "maxLength": 64 },
+        "valor": { "type": "number" },
+        "status": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "userId", "data", "descricao", "categoria", "valor", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Individual user profile records"
+    },
+    "/users_by_email/{emailHash}": {
+      "schema": "UserProfile",
+      "description": "Email-to-user routing index for secure authentication lookups"
+    },
+    "/users/{userId}/financial/{docId}": {
+      "schema": "FinancialProfile",
+      "description": "Financial configuration and settings per user"
+    },
+    "/users/{userId}/expenses/{expenseId}": {
+      "schema": "Expense",
+      "description": "User expense records with strict owner isolation"
+    }
+  }
+}
