@@ -476,20 +476,35 @@ export async function loginWithGoogle(): Promise<{ user?: FirebaseUserProfile; e
     return { user: newProfile };
   } catch (error: any) {
     console.error('Google Sign In error:', error);
-    if (error?.code === 'auth/popup-closed-by-user') {
+    const errorCode = error?.code || '';
+    const errorMsg = error?.message || '';
+
+    if (errorCode === 'auth/popup-closed-by-user') {
       return { error: 'O login com o Google foi cancelado antes da conclusão.' };
     }
-    if (error?.code === 'auth/popup-blocked') {
+    if (errorCode === 'auth/popup-blocked') {
       return {
         error:
           'O pop-up de login foi bloqueado pelo seu navegador. Por favor, permita pop-ups para fazer login com a conta Google.',
       };
     }
-    if (error?.code === 'auth/cancelled-popup-request') {
+    if (errorCode === 'auth/cancelled-popup-request') {
       return { error: 'Requisição de login cancelada. Tente novamente.' };
     }
-    if (error?.code === 'auth/network-request-failed') {
+    if (errorCode === 'auth/network-request-failed') {
       return { error: 'Falha de rede ao conectar com a conta Google. Verifique sua conexão à internet.' };
+    }
+    if (errorCode === 'auth/api-key-not-valid' || errorMsg.includes('api-key-not-valid')) {
+      return {
+        error:
+          'A chave de API do Firebase precisa ser autorizada. Verifique no Google Cloud / Firebase Console se a "Identity Toolkit API" está ativada e se a API Key tem as restrições corretas.',
+      };
+    }
+    if (errorCode === 'auth/unauthorized-domain' || errorMsg.includes('unauthorized-domain')) {
+      return {
+        error:
+          'Este domínio ainda não foi autorizado no Firebase Authentication. Adicione este endereço em Firebase Console > Authentication > Settings > Authorized Domains.',
+      };
     }
     return { error: error?.message || 'Falha ao autenticar com a conta Google. Tente novamente.' };
   }
