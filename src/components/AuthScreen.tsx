@@ -225,7 +225,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           {errorMessage && (
             <div className="mb-5 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-500/30 flex items-start gap-2.5 text-xs text-rose-800 dark:text-rose-300 animate-fadeIn">
               <AlertCircle className="h-4 w-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-              <span>{errorMessage}</span>
+              <div className="space-y-1">
+                <span className="font-medium block">{errorMessage}</span>
+                {errorMessage.includes('api-key-not-valid') && (
+                  <span className="text-[11px] text-rose-700 dark:text-rose-400 block">
+                    Dica: Verifique se a chave Web API Key no console do Firebase corresponde à configurada ou use a variável de ambiente VITE_FIREBASE_API_KEY.
+                  </span>
+                )}
+              </div>
             </div>
           )}
 

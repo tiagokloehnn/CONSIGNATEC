@@ -23,9 +23,21 @@ import {
   getDocFromServer,
   Unsubscribe,
 } from 'firebase/firestore';
-import firebaseConfig from '../../firebase-applet-config.json';
+import firebaseRawConfig from '../../firebase-applet-config.json';
 import { CategoryItem, Expense } from '../types/finance';
 import { DEFAULT_CATEGORIES, getCurrentMonthLabel } from '../utils/formatters';
+
+// Support runtime environment variable overrides (e.g., in Vercel or custom hosting)
+const firebaseConfig = {
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseRawConfig.projectId,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || firebaseRawConfig.appId,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || firebaseRawConfig.apiKey,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseRawConfig.authDomain,
+  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_DATABASE_ID || firebaseRawConfig.firestoreDatabaseId,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseRawConfig.storageBucket,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseRawConfig.messagingSenderId,
+  measurementId: firebaseRawConfig.measurementId || '',
+};
 
 // Initialize Firebase App
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
