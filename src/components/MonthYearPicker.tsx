@@ -140,7 +140,7 @@ export const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all min-w-0 cursor-pointer ${
+          className={`flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all min-w-0 cursor-pointer ${
             isOpen
               ? 'bg-white dark:bg-slate-800 text-teal-900 dark:text-teal-300 shadow-xs'
               : 'text-slate-800 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
@@ -148,11 +148,11 @@ export const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
           title="Clique para escolher ou adicionar mês de lançamento"
         >
           <Calendar className="h-3.5 w-3.5 text-teal-700 dark:text-teal-400 shrink-0" />
-          <span className="truncate max-w-[140px] sm:max-w-none">
+          <span className="truncate max-w-[110px] sm:max-w-none text-[11px] sm:text-xs">
             {isAllMonths ? 'Todos os Meses' : currentMonth}
           </span>
           <ChevronDown
-            className={`h-3.5 w-3.5 text-slate-400 dark:text-slate-500 transition-transform duration-200 shrink-0 ${
+            className={`h-3 w-3 sm:h-3.5 sm:w-3.5 text-slate-400 dark:text-slate-500 transition-transform duration-200 shrink-0 ${
               isOpen ? 'rotate-180 text-teal-800 dark:text-teal-400' : ''
             }`}
           />

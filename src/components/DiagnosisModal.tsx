@@ -152,13 +152,13 @@ ${diagnosis.recommendations.map((r, i) => `${i + 1}. ${r}`).join('\n')}
 
               {/* 50-30-20 Rule Section */}
               <div>
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-3">
                   <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <TrendingUp className="h-3.5 w-3.5 text-teal-800 dark:text-teal-400" />
-                    Comparativo Regra 50 - 30 - 20
+                    <TrendingUp className="h-3.5 w-3.5 text-teal-800 dark:text-teal-400 shrink-0" />
+                    <span>Comparativo Regra 50 - 30 - 20</span>
                   </h4>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                    Metodologia de Planejamento Financeiro
+                  <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                    Metodologia de Planejamento
                   </span>
                 </div>
 
@@ -362,11 +362,11 @@ ${diagnosis.recommendations.map((r, i) => `${i + 1}. ${r}`).join('\n')}
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex items-center justify-between shrink-0">
+        <div className="px-4 sm:px-6 py-3 sm:py-3.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-wrap items-center justify-between gap-2 shrink-0">
           <button
             onClick={handleCopyReport}
             disabled={!diagnosis || isLoading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 cursor-pointer"
           >
             {copied ? (
               <>
@@ -376,7 +376,7 @@ ${diagnosis.recommendations.map((r, i) => `${i + 1}. ${r}`).join('\n')}
             ) : (
               <>
                 <Copy className="h-3.5 w-3.5" />
-                <span>Copiar Relatório</span>
+                <span>Copiar</span>
               </>
             )}
           </button>
@@ -385,13 +385,13 @@ ${diagnosis.recommendations.map((r, i) => `${i + 1}. ${r}`).join('\n')}
             <button
               onClick={onRefresh}
               disabled={isLoading}
-              className="px-3 py-1.5 text-xs font-semibold text-teal-800 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950/60 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+              className="px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-teal-800 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950/60 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
             >
               Reanalisar
             </button>
             <button
               onClick={onClose}
-              className="px-4 py-1.5 text-xs font-semibold text-white bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 rounded-lg transition-colors cursor-pointer"
+              className="px-3.5 sm:px-4 py-1.5 text-xs font-semibold text-white bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 rounded-lg transition-colors cursor-pointer"
             >
               Fechar
             </button>

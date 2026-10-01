@@ -406,16 +406,33 @@ export async function loginWithGoogle(): Promise<{ user?: FirebaseUserProfile; e
     const userCredential = await signInWithPopup(auth, googleProvider);
     const fbUser = userCredential.user;
     const cleanEmail = fbUser.email ? fbUser.email.trim().toLowerCase() : '';
-    const userId = fbUser.uid;
+    const googleUserId = fbUser.uid;
     const cleanName = fbUser.displayName || (cleanEmail ? cleanEmail.split('@')[0] : 'Usuário Google');
     const photoURL = fbUser.photoURL || undefined;
     const phone = fbUser.phoneNumber || undefined;
     const nowIso = new Date().toISOString();
 
-    // 1. Check if user document already exists in this isolated Firestore database
+    let resolvedUserId = googleUserId;
+
+    // 1. Check if user already exists in Firestore by email index (e.g. registered via email/password)
+    if (cleanEmail) {
+      try {
+        const emailSnap = await getDoc(doc(db, 'users_by_email', getEmailKey(cleanEmail)));
+        if (emailSnap.exists()) {
+          const indexData = emailSnap.data();
+          if (indexData.userId) {
+            resolvedUserId = indexData.userId;
+          }
+        }
+      } catch (e) {
+        console.warn('Could not check users_by_email for Google login:', e);
+      }
+    }
+
+    // 2. Check if user document already exists in this isolated Firestore database under resolvedUserId
     let existingProfile: FirebaseUserProfile | null = null;
     try {
-      const userDocRef = doc(db, 'users', userId);
+      const userDocRef = doc(db, 'users', resolvedUserId);
       const userSnap = await getDoc(userDocRef);
       if (userSnap && userSnap.exists()) {
         existingProfile = userSnap.data() as FirebaseUserProfile;
@@ -425,10 +442,10 @@ export async function loginWithGoogle(): Promise<{ user?: FirebaseUserProfile; e
     }
 
     if (existingProfile) {
-      // Returning user: maintain their existing data, update name/photo if refreshed
+      // Returning user: maintain their existing data, update name/photo/authProvider if refreshed
       const updatedProfile: FirebaseUserProfile = {
         ...existingProfile,
-        id: userId,
+        id: resolvedUserId,
         email: cleanEmail || existingProfile.email,
         name: cleanName || existingProfile.name,
         photoURL: photoURL || existingProfile.photoURL,
@@ -436,14 +453,27 @@ export async function loginWithGoogle(): Promise<{ user?: FirebaseUserProfile; e
         updatedAt: nowIso,
       };
 
-      await setDoc(doc(db, 'users', userId), updatedProfile, { merge: true }).catch(() => {});
+      await setDoc(doc(db, 'users', resolvedUserId), updatedProfile, { merge: true }).catch(() => {});
+      if (cleanEmail) {
+        await setDoc(
+          doc(db, 'users_by_email', getEmailKey(cleanEmail)),
+          {
+            userId: resolvedUserId,
+            email: cleanEmail,
+            name: updatedProfile.name,
+            authProvider: 'google',
+            updatedAt: nowIso,
+          },
+          { merge: true }
+        ).catch(() => {});
+      }
       return { user: updatedProfile };
     }
 
-    // 2. Brand new user: clear old tool caches and initialize clean zeroed financial profile
+    // 3. Brand new user: clear old tool caches and initialize clean zeroed financial profile
     clearAllLocalStoredAccounts();
     const newProfile: FirebaseUserProfile = {
-      id: userId,
+      id: resolvedUserId,
       email: cleanEmail,
       name: cleanName,
       phone: phone || '',
@@ -460,7 +490,7 @@ export async function loginWithGoogle(): Promise<{ user?: FirebaseUserProfile; e
     }));
     const initialMonth = getCurrentMonthLabel();
     const initialFinancial: UserFinancialData = {
-      userId,
+      userId: resolvedUserId,
       baseIncome: 0,
       monthlyIncomes: {},
       activeMonths: [initialMonth],
@@ -470,17 +500,22 @@ export async function loginWithGoogle(): Promise<{ user?: FirebaseUserProfile; e
     };
 
     try {
-      setDoc(doc(db, 'users', userId), newProfile).catch(() => {});
+      await setDoc(doc(db, 'users', resolvedUserId), newProfile);
       if (cleanEmail) {
-        setDoc(doc(db, 'users_by_email', getEmailKey(cleanEmail)), {
-          userId,
+        await setDoc(doc(db, 'users_by_email', getEmailKey(cleanEmail)), {
+          userId: resolvedUserId,
           email: cleanEmail,
           name: cleanName,
           authProvider: 'google',
           createdAt: nowIso,
-        }).catch(() => {});
+          updatedAt: nowIso,
+        });
       }
-      setDoc(doc(db, 'users', userId, 'financial', 'main'), initialFinancial).catch(() => {});
+      // Only set initial financial data if it doesn't already exist
+      const finSnap = await getDoc(doc(db, 'users', resolvedUserId, 'financial', 'main'));
+      if (!finSnap.exists()) {
+        await setDoc(doc(db, 'users', resolvedUserId, 'financial', 'main'), initialFinancial);
+      }
     } catch (err) {
       console.warn('Background sync for new Google user queued:', err);
     }

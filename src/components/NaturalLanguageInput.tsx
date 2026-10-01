@@ -74,19 +74,21 @@ export const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
   };
 
   return (
-    <div className="bg-gradient-to-r from-teal-900 to-teal-800 rounded-xl p-3.5 sm:p-5 text-white shadow-sm shadow-teal-900/10">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 min-w-0">
+    <div className="bg-gradient-to-r from-teal-900 to-teal-800 rounded-xl p-3 sm:p-5 text-white shadow-sm shadow-teal-900/10">
+      <div className="flex items-center justify-between gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-teal-700/80 flex items-center justify-center text-emerald-300 shrink-0">
-            <Sparkles className="h-4 w-4" />
+            <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </div>
-          <div className="min-w-0">
-            <h3 className="text-xs sm:text-base font-bold text-white flex items-center gap-1.5 truncate">
-              Leitor Rápido de Gastos com IA
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <h3 className="text-xs sm:text-base font-bold text-white truncate">
+                Leitor Rápido de Gastos
+              </h3>
               <span className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-teal-700 text-teal-200 shrink-0">
                 Gemini IA
               </span>
-            </h3>
+            </div>
             <p className="text-[11px] sm:text-xs text-teal-200/90 hidden sm:block">
               Digite uma frase em português natural e o assistente preencherá valor, categoria, pagamento e data.
             </p>
@@ -97,10 +99,12 @@ export const NaturalLanguageInput: React.FC<NaturalLanguageInputProps> = ({
         <button
           type="button"
           onClick={() => setIsExpandedOnMobile(!isExpandedOnMobile)}
-          className="sm:hidden flex items-center gap-1 px-2 py-1 rounded-lg bg-white/10 text-teal-100 hover:text-white text-xs font-semibold shrink-0 touch-manipulation"
+          className="sm:hidden flex items-center gap-1 px-2 py-1 rounded-lg bg-white/10 text-teal-100 hover:text-white text-xs font-semibold shrink-0 touch-manipulation cursor-pointer"
         >
           <span>{isExpandedOnMobile ? 'Recolher' : 'Digitar'}</span>
-          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isExpandedOnMobile ? 'rotate-180' : ''}`} />
+          <ChevronDown
+            className={`h-3 w-3 transition-transform ${isExpandedOnMobile ? 'rotate-180' : ''}`}
+          />
         </button>
       </div>
 

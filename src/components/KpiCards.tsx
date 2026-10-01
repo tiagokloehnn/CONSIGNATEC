@@ -54,7 +54,7 @@ export const KpiCards: React.FC<KpiCardsProps> = ({
             </div>
           </div>
 
-          <div className="mt-2 sm:mt-2.5">
+          <div className="mt-1.5 sm:mt-2.5">
             {isEditingIncome ? (
               <div className="flex items-center gap-1 mt-1">
                 <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">R$</span>
@@ -87,8 +87,8 @@ export const KpiCards: React.FC<KpiCardsProps> = ({
                 </button>
               </div>
             ) : (
-              <div className="flex items-baseline justify-between group gap-1">
-                <div className="text-base sm:text-xl lg:text-2xl font-bold tracking-tight text-slate-900 dark:text-white truncate" title={formatBRL(income)}>
+              <div className="flex items-baseline justify-between group gap-1 min-w-0">
+                <div className="text-sm sm:text-lg lg:text-2xl font-bold tracking-tight text-slate-900 dark:text-white truncate" title={formatBRL(income)}>
                   {formatBRL(income)}
                 </div>
                 <button
@@ -96,7 +96,7 @@ export const KpiCards: React.FC<KpiCardsProps> = ({
                   className="p-1 text-slate-400 hover:text-teal-800 dark:hover:text-teal-400 hover:bg-teal-50 dark:hover:bg-slate-800 rounded transition-colors shrink-0 touch-manipulation cursor-pointer"
                   title="Editar renda líquida esperada"
                 >
-                  <Edit3 className="h-3.5 w-3.5" />
+                  <Edit3 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                 </button>
               </div>
             )}
@@ -126,8 +126,8 @@ export const KpiCards: React.FC<KpiCardsProps> = ({
             </div>
           </div>
 
-          <div className="mt-2 sm:mt-2.5">
-            <div className="text-base sm:text-xl lg:text-2xl font-bold tracking-tight text-slate-900 dark:text-white truncate" title={formatBRL(totalExpenses)}>
+          <div className="mt-1.5 sm:mt-2.5">
+            <div className="text-sm sm:text-lg lg:text-2xl font-bold tracking-tight text-slate-900 dark:text-white truncate" title={formatBRL(totalExpenses)}>
               {formatBRL(totalExpenses)}
             </div>
           </div>
@@ -169,9 +169,9 @@ export const KpiCards: React.FC<KpiCardsProps> = ({
             </div>
           </div>
 
-          <div className="mt-2 sm:mt-2.5">
+          <div className="mt-1.5 sm:mt-2.5">
             <div
-              className={`text-base sm:text-xl lg:text-2xl font-bold tracking-tight truncate ${
+              className={`text-sm sm:text-lg lg:text-2xl font-bold tracking-tight truncate ${
                 isNegativeBalance ? 'text-rose-600 dark:text-rose-400' : 'text-teal-800 dark:text-teal-300'
               }`}
               title={formatBRL(availableBalance)}
@@ -209,8 +209,8 @@ export const KpiCards: React.FC<KpiCardsProps> = ({
             </div>
           </div>
 
-          <div className="mt-2 sm:mt-2.5 flex items-baseline justify-between gap-1">
-            <div className="text-base sm:text-xl lg:text-2xl font-bold tracking-tight text-slate-900 dark:text-white truncate">
+          <div className="mt-1.5 sm:mt-2.5 flex items-baseline justify-between gap-1 min-w-0">
+            <div className="text-sm sm:text-lg lg:text-2xl font-bold tracking-tight text-slate-900 dark:text-white truncate">
               {formatPercent(savingsRate)}
             </div>
             <span

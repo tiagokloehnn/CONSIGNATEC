@@ -820,31 +820,31 @@ export const StockRecommendations: React.FC<StockRecommendationsProps> = ({
         </div>
 
         {/* Tab Navigation (2 Simplified Tabs for Beginners) */}
-        <div className="flex items-center gap-3 mt-5 border-b border-slate-200 dark:border-slate-800 pb-3">
+        <div className="flex items-center gap-2 sm:gap-3 mt-4 sm:mt-5 border-b border-slate-200 dark:border-slate-800 pb-3 overflow-x-auto scrollbar-none">
           <button
             type="button"
             onClick={() => setActiveTab('explore')}
-            className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center gap-2 ${
+            className={`px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap shrink-0 ${
               activeTab === 'explore'
                 ? 'bg-teal-600 text-white shadow-md shadow-teal-900/30'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900'
             }`}
           >
-            <Search className="h-4 w-4 text-teal-300" />
-            1. Explorar & Pesquisar Histórico de Ações
+            <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-teal-300 shrink-0" />
+            <span>1. Explorar & Pesquisar</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('portfolio')}
-            className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center gap-2 ${
+            className={`px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap shrink-0 ${
               activeTab === 'portfolio'
                 ? 'bg-teal-600 text-white shadow-md shadow-teal-900/30'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900'
             }`}
           >
-            <Wallet className="h-4 w-4 text-teal-300" />
-            2. Minha Carteira ({userPortfolio.length})
+            <Wallet className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-teal-300 shrink-0" />
+            <span>2. Minha Carteira ({userPortfolio.length})</span>
           </button>
         </div>
 

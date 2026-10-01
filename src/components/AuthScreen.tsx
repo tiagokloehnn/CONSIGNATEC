@@ -134,6 +134,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             email: result.user.email,
             name: result.user.name,
             phone: result.user.phone,
+            photoURL: result.user.photoURL,
           });
         }
       }
