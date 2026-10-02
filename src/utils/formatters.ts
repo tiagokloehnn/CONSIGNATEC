@@ -66,6 +66,14 @@ export const DEFAULT_CATEGORIES: CategoryItem[] = [
     classification: 'desejos',
   },
   {
+    id: 'cat-cartao-credito',
+    name: 'Cartão de Crédito',
+    budget: 1500.0,
+    color: '#6366F1', // Azul Royal
+    icon: 'CreditCard',
+    classification: 'desejos',
+  },
+  {
     id: 'cat-investimentos',
     name: 'Investimentos / Reserva',
     budget: 1630.0,
