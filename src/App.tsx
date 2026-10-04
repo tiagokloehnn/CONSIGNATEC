@@ -298,10 +298,30 @@ export default function App() {
     return baseIncome;
   }, [currentMonth, monthlyIncomes, baseIncome]);
 
+  // Active Categories visible for the currently selected month
+  const displayCategories = useMemo(() => {
+    if (currentMonth === 'all') {
+      return categories;
+    }
+    return categories.filter(
+      (c) => !c.excludedMonths || !c.excludedMonths.includes(currentMonth)
+    );
+  }, [categories, currentMonth]);
+
+  // Categories excluded specifically for the currently selected month
+  const excludedCategoriesInCurrentMonth = useMemo(() => {
+    if (currentMonth === 'all') {
+      return [];
+    }
+    return categories.filter(
+      (c) => c.excludedMonths && c.excludedMonths.includes(currentMonth)
+    );
+  }, [categories, currentMonth]);
+
   // Derived Calculations for the active month
   const spendingByCategory = useMemo(() => {
     const map: Record<string, number> = {};
-    categories.forEach((cat) => {
+    displayCategories.forEach((cat) => {
       map[cat.name] = 0;
     });
     activeExpenses.forEach((exp) => {
@@ -311,15 +331,15 @@ export default function App() {
       map[exp.categoria] += exp.valor;
     });
     return map;
-  }, [activeExpenses, categories]);
+  }, [activeExpenses, displayCategories]);
 
   const totalExpenses = useMemo(() => {
     return activeExpenses.reduce((sum, item) => sum + item.valor, 0);
   }, [activeExpenses]);
 
   const availableCategoryNames = useMemo(() => {
-    return categories.map((c) => c.name);
-  }, [categories]);
+    return displayCategories.map((c) => c.name);
+  }, [displayCategories]);
 
   // Handlers for Month Management
   const handleMonthChange = (newMonth: string) => {
@@ -431,11 +451,30 @@ export default function App() {
       }
       updatedCategories = categories.map((c) => (c.id === id ? { ...categoryData, id } : c));
     } else {
-      const newCat: CategoryItem = {
-        ...categoryData,
-        id: `cat-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-      };
-      updatedCategories = [...categories, newCat];
+      // Check if there is an existing category with the same name that was excluded in this month
+      const existingExcluded = categories.find(
+        (c) =>
+          c.name.trim().toLowerCase() === categoryData.name.trim().toLowerCase() &&
+          c.excludedMonths?.includes(currentMonth)
+      );
+      if (existingExcluded && currentMonth !== 'all') {
+        // Re-enable it in currentMonth
+        updatedCategories = categories.map((c) =>
+          c.id === existingExcluded.id
+            ? {
+                ...c,
+                ...categoryData,
+                excludedMonths: (c.excludedMonths || []).filter((m) => m !== currentMonth),
+              }
+            : c
+        );
+      } else {
+        const newCat: CategoryItem = {
+          ...categoryData,
+          id: `cat-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        };
+        updatedCategories = [...categories, newCat];
+      }
     }
 
     setCategories(updatedCategories);
@@ -451,7 +490,32 @@ export default function App() {
 
   const handleConfirmDeleteCategory = async () => {
     if (categoryToDelete) {
-      const updated = categories.filter((c) => c.id !== categoryToDelete.id);
+      let updated: CategoryItem[];
+      if (currentMonth !== 'all') {
+        // Exclude category specifically from the current active month
+        updated = categories.map((c) => {
+          if (c.id === categoryToDelete.id) {
+            const existing = c.excludedMonths || [];
+            return {
+              ...c,
+              excludedMonths: existing.includes(currentMonth)
+                ? existing
+                : [...existing, currentMonth],
+            };
+          }
+          return c;
+        });
+        setGlobalAlertMessage(
+          `Categoria "${categoryToDelete.name}" excluída somente de ${currentMonth}. Ela permanece ativa nos outros meses.`
+        );
+      } else {
+        // When viewing all months, remove completely
+        updated = categories.filter((c) => c.id !== categoryToDelete.id);
+        setGlobalAlertMessage(
+          `Categoria "${categoryToDelete.name}" foi excluída de todo o sistema.`
+        );
+      }
+
       setCategories(updated);
       if (currentUser && !currentUser.isGuest) {
         await saveUserFinancialProfile(currentUser.id, { categories: updated });
@@ -460,12 +524,31 @@ export default function App() {
     }
   };
 
+  const handleRestoreCategoryForMonth = async (cat: CategoryItem) => {
+    if (currentMonth === 'all') return;
+    const updated = categories.map((c) => {
+      if (c.id === cat.id && c.excludedMonths) {
+        return {
+          ...c,
+          excludedMonths: c.excludedMonths.filter((m) => m !== currentMonth),
+        };
+      }
+      return c;
+    });
+    setCategories(updated);
+    if (currentUser && !currentUser.isGuest) {
+      await saveUserFinancialProfile(currentUser.id, { categories: updated });
+    }
+    setGlobalAlertMessage(`Categoria "${cat.name}" reativada no mês de ${currentMonth}.`);
+  };
+
   const countExpensesForDeletedCategory = useMemo(() => {
     if (!categoryToDelete) return 0;
-    return expenses.filter(
+    const targetExpenses = currentMonth !== 'all' ? activeExpenses : expenses;
+    return targetExpenses.filter(
       (e) => e.categoria.toLowerCase() === categoryToDelete.name.toLowerCase()
     ).length;
-  }, [categoryToDelete, expenses]);
+  }, [categoryToDelete, currentMonth, activeExpenses, expenses]);
 
   const handleUpdateBudget = async (categoryName: string, newLimit: number) => {
     const updated = categories.map((cat) =>
@@ -981,7 +1064,7 @@ export default function App() {
           {totalExpenses > 0 ? (
             <div className="space-y-3">
               <div className="h-3.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full flex overflow-hidden p-0.5 border border-slate-200 dark:border-slate-700">
-                {categories.map((cat) => {
+                {displayCategories.map((cat) => {
                   const spent = spendingByCategory[cat.name] || 0;
                   const ratio = (spent / totalExpenses) * 100;
                   if (ratio <= 0) return null;
@@ -1001,7 +1084,7 @@ export default function App() {
 
               {/* Legend Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 pt-2">
-                {categories.map((cat) => {
+                {displayCategories.map((cat) => {
                   const spent = spendingByCategory[cat.name] || 0;
                   const ratio = totalExpenses > 0 ? (spent / totalExpenses) * 100 : 0;
                   return (
@@ -1063,7 +1146,10 @@ export default function App() {
           }
         >
           <CategoryBudgetTable
-            categories={categories}
+            categories={displayCategories}
+            excludedCategoriesInCurrentMonth={excludedCategoriesInCurrentMonth}
+            currentMonth={currentMonth}
+            onRestoreCategoryForMonth={handleRestoreCategoryForMonth}
             spendingByCategory={spendingByCategory}
             onUpdateBudget={handleUpdateBudget}
             onOpenNewCategoryModal={handleOpenNewCategoryModal}
@@ -1118,7 +1204,7 @@ export default function App() {
         onClose={() => setIsExpenseModalOpen(false)}
         onSave={editingExpense ? handleEditExpense : handleAddExpense}
         initialExpense={editingExpense}
-        categories={categories}
+        categories={displayCategories.length > 0 ? displayCategories : categories}
         defaultYearMonth={currentYearMonth}
         onOpenNewCategory={handleOpenNewCategoryModal}
       />
@@ -1135,13 +1221,23 @@ export default function App() {
       {/* Delete Category Confirmation Modal */}
       <ConfirmModal
         isOpen={!!categoryToDelete}
-        title="Excluir Categoria de Orçamento"
-        message={
-          countExpensesForDeletedCategory > 0
-            ? `A categoria "${categoryToDelete?.name}" possui ${countExpensesForDeletedCategory} despesa(s) registrada(s). Ao excluí-la, ela será removida da tabela de metas e planejamento mensal.`
-            : `Tem certeza que deseja excluir a categoria "${categoryToDelete?.name}"? Esta ação removerá o planejamento de gastos desta categoria.`
+        title={
+          currentMonth !== 'all'
+            ? `Excluir Categoria de ${currentMonth}`
+            : 'Excluir Categoria do Sistema'
         }
-        confirmLabel="Excluir Categoria"
+        message={
+          currentMonth !== 'all'
+            ? countExpensesForDeletedCategory > 0
+              ? `A categoria "${categoryToDelete?.name}" possui ${countExpensesForDeletedCategory} lançamento(s) em ${currentMonth}. Ao excluí-la, ela será ocultada da tabela de metas somente deste mês. Suas despesas históricas e o cadastro nos outros meses permanecerão 100% preservados.`
+              : `Deseja excluir a categoria "${categoryToDelete?.name}" somente do mês de ${currentMonth}? Ela continuará ativa e disponível normalmente nos outros meses.`
+            : `Tem certeza que deseja excluir a categoria "${categoryToDelete?.name}" de todo o sistema?`
+        }
+        confirmLabel={
+          currentMonth !== 'all'
+            ? `Excluir de ${currentMonth}`
+            : 'Excluir Categoria'
+        }
         cancelLabel="Cancelar"
         variant="danger"
         onCancel={() => setCategoryToDelete(null)}

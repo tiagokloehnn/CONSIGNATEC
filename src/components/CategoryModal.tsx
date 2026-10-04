@@ -5,6 +5,7 @@ import {
   AVAILABLE_CATEGORY_ICONS,
   AVAILABLE_CATEGORY_COLORS,
   formatBRL,
+  parseCurrencyInput,
 } from '../utils/formatters';
 import { CategoryIcon } from './CategoryIcon';
 
@@ -35,13 +36,13 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
   useEffect(() => {
     if (initialCategory) {
       setName(initialCategory.name);
-      setBudgetStr(initialCategory.budget.toString());
+      setBudgetStr(initialCategory.budget.toString().replace('.', ','));
       setColor(initialCategory.color);
       setIcon(initialCategory.icon);
       setClassification(initialCategory.classification);
     } else {
       setName('');
-      setBudgetStr('300');
+      setBudgetStr('300,00');
       // Pick a random unused or next color from palette
       const usedColors = new Set(existingCategories.map((c) => c.color));
       const nextColor =
@@ -75,10 +76,9 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
       return;
     }
 
-    const cleanBudget = budgetStr.replace(/\./g, '').replace(',', '.');
-    const parsedBudget = parseFloat(cleanBudget);
+    const parsedBudget = parseCurrencyInput(budgetStr);
     if (isNaN(parsedBudget) || parsedBudget < 0) {
-      setError('Por favor, informe um orçamento limite numérico válido.');
+      setError('Por favor, informe um orçamento limite numérico válido (ex: 350,00 ou 350.00).');
       return;
     }
 
@@ -96,7 +96,7 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
     onClose();
   };
 
-  const parsedBudgetPreview = parseFloat(budgetStr.replace(/\./g, '').replace(',', '.')) || 0;
+  const parsedBudgetPreview = parseCurrencyInput(budgetStr);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 dark:bg-black/70 backdrop-blur-xs animate-fadeIn overflow-y-auto">
@@ -153,12 +153,14 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
                   R$
                 </span>
                 <input
-                  type="number"
-                  step="10"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
                   required
                   value={budgetStr}
-                  onChange={(e) => setBudgetStr(e.target.value)}
+                  onChange={(e) => {
+                    const clean = e.target.value.replace(/[^0-9.,]/g, '');
+                    setBudgetStr(clean);
+                  }}
                   placeholder="0,00"
                   className="w-full text-base sm:text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-10 pr-3 py-2 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-700 focus:border-transparent font-medium"
                 />

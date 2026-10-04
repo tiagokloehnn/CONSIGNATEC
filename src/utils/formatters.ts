@@ -183,6 +183,44 @@ export function formatBRL(value: number): string {
 }
 
 /**
+ * Converte entradas numéricas com vírgula ou ponto (ex: "15,50", "15.50", "1.250,50") de forma segura
+ */
+export function parseCurrencyInput(value: string | number): number {
+  if (typeof value === 'number') return isNaN(value) ? 0 : value;
+  if (!value) return 0;
+  const trimmed = String(value).trim();
+  if (!trimmed) return 0;
+
+  // Ambos ponto e vírgula presentes (ex: 1.250,50 ou 1,250.50)
+  if (trimmed.includes('.') && trimmed.includes(',')) {
+    const lastDot = trimmed.lastIndexOf('.');
+    const lastComma = trimmed.lastIndexOf(',');
+    if (lastComma > lastDot) {
+      // Padrão brasileiro: 1.250,50 -> 1250.50
+      return parseFloat(trimmed.replace(/\./g, '').replace(',', '.'));
+    } else {
+      // Padrão internacional: 1,250.50 -> 1250.50
+      return parseFloat(trimmed.replace(/,/g, ''));
+    }
+  }
+
+  // Apenas vírgula presente (ex: 15,50)
+  if (trimmed.includes(',')) {
+    return parseFloat(trimmed.replace(',', '.'));
+  }
+
+  // Apenas pontos presentes
+  const dotCount = (trimmed.match(/\./g) || []).length;
+  if (dotCount > 1) {
+    // Múltiplos pontos como separador de milhar: 1.000.000 -> 1000000
+    return parseFloat(trimmed.replace(/\./g, ''));
+  }
+
+  // Ponto único como decimal (ex: 15.50)
+  return parseFloat(trimmed);
+}
+
+/**
  * Formata data ISO (YYYY-MM-DD) para padrão nacional DD/MM/AAAA
  */
 export function formatDateBR(isoDateString: string): string {

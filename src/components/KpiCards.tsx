@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { DollarSign, TrendingDown, Wallet, PiggyBank, Edit3, Check, X } from 'lucide-react';
-import { formatBRL, formatPercent } from '../utils/formatters';
+import { formatBRL, formatPercent, parseCurrencyInput } from '../utils/formatters';
 
 interface KpiCardsProps {
   income: number;
@@ -14,7 +14,7 @@ export const KpiCards: React.FC<KpiCardsProps> = ({
   onUpdateIncome,
 }) => {
   const [isEditingIncome, setIsEditingIncome] = useState(false);
-  const [tempIncomeStr, setTempIncomeStr] = useState(income.toString());
+  const [tempIncomeStr, setTempIncomeStr] = useState(income.toString().replace('.', ','));
 
   const availableBalance = income - totalExpenses;
   const isNegativeBalance = availableBalance < 0;
@@ -23,13 +23,12 @@ export const KpiCards: React.FC<KpiCardsProps> = ({
   const savingsRate = income > 0 ? (availableBalance / income) * 100 : 0;
 
   const handleStartEdit = () => {
-    setTempIncomeStr(income.toString());
+    setTempIncomeStr(income.toString().replace('.', ','));
     setIsEditingIncome(true);
   };
 
   const handleSaveIncome = () => {
-    const cleaned = tempIncomeStr.replace(/\./g, '').replace(',', '.');
-    const val = parseFloat(cleaned);
+    const val = parseCurrencyInput(tempIncomeStr);
     if (!isNaN(val) && val >= 0) {
       onUpdateIncome(val);
     }
@@ -59,11 +58,13 @@ export const KpiCards: React.FC<KpiCardsProps> = ({
               <div className="flex items-center gap-1 mt-1">
                 <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">R$</span>
                 <input
-                  type="number"
-                  step="50"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
                   value={tempIncomeStr}
-                  onChange={(e) => setTempIncomeStr(e.target.value)}
+                  onChange={(e) => {
+                    const clean = e.target.value.replace(/[^0-9.,]/g, '');
+                    setTempIncomeStr(clean);
+                  }}
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleSaveIncome();

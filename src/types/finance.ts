@@ -7,6 +7,7 @@ export interface CategoryItem {
   color: string;
   icon: string;
   classification: 'necessidades' | 'desejos' | 'investimentos';
+  excludedMonths?: string[];
 }
 
 export type PaymentMethod =

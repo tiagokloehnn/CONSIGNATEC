@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Check, Plus } from 'lucide-react';
 import { Expense, CategoryName, PaymentMethod, ExpenseStatus, CategoryItem } from '../types/finance';
-import { PAYMENT_METHODS } from '../utils/formatters';
+import { PAYMENT_METHODS, parseCurrencyInput } from '../utils/formatters';
 
 interface ExpenseModalProps {
   isOpen: boolean;
@@ -36,7 +36,8 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
       setDescricao(initialExpense.descricao);
       setCategoria(initialExpense.categoria);
       setFormaPagamento(initialExpense.forma_pagamento);
-      setValorStr(initialExpense.valor.toString());
+      // Format existing value with comma for friendly editing: e.g. 15.50 -> 15,50
+      setValorStr(initialExpense.valor.toString().replace('.', ','));
       setStatus(initialExpense.status);
     } else {
       // Default to current selected month or today
@@ -73,10 +74,9 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
       return;
     }
 
-    const cleanVal = valorStr.replace(/\./g, '').replace(',', '.');
-    const parsedVal = parseFloat(cleanVal);
+    const parsedVal = parseCurrencyInput(valorStr);
     if (isNaN(parsedVal) || parsedVal <= 0) {
-      setError('Por favor, informe um valor numérico válido maior que zero.');
+      setError('Por favor, informe um valor válido maior que zero (ex: 15,50 ou 15.50).');
       return;
     }
 
@@ -150,12 +150,14 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
                   R$
                 </span>
                 <input
-                  type="number"
-                  step="0.01"
-                  min="0.01"
+                  type="text"
+                  inputMode="decimal"
                   required
                   value={valorStr}
-                  onChange={(e) => setValorStr(e.target.value)}
+                  onChange={(e) => {
+                    const clean = e.target.value.replace(/[^0-9.,]/g, '');
+                    setValorStr(clean);
+                  }}
                   placeholder="0,00"
                   className="w-full text-base sm:text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-10 pr-3 py-2 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-700 focus:border-transparent font-medium"
                 />

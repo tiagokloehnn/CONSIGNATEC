@@ -15,6 +15,7 @@ import {
   formatPercent,
   getCategoryStatus,
   getStatusBadgeConfig,
+  parseCurrencyInput,
 } from '../utils/formatters';
 import { CategoryIcon } from './CategoryIcon';
 
@@ -25,7 +26,10 @@ interface CategoryBudgetTableProps {
   onOpenNewCategoryModal: () => void;
   onEditCategory: (category: CategoryItem) => void;
   onDeleteCategory: (category: CategoryItem) => void;
+  onRestoreCategoryForMonth?: (category: CategoryItem) => void;
   onRestoreDefaultCategories?: () => void;
+  excludedCategoriesInCurrentMonth?: CategoryItem[];
+  currentMonth?: string;
 }
 
 export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
@@ -35,19 +39,21 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
   onOpenNewCategoryModal,
   onEditCategory,
   onDeleteCategory,
+  onRestoreCategoryForMonth,
   onRestoreDefaultCategories,
+  excludedCategoriesInCurrentMonth,
+  currentMonth,
 }) => {
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [tempBudgetValue, setTempBudgetValue] = useState<string>('');
 
   const handleStartEdit = (cat: CategoryItem) => {
     setEditingCategoryId(cat.id);
-    setTempBudgetValue(cat.budget.toString());
+    setTempBudgetValue(cat.budget.toString().replace('.', ','));
   };
 
   const handleSaveBudget = (cat: CategoryItem) => {
-    const cleaned = tempBudgetValue.replace(/\./g, '').replace(',', '.');
-    const parsed = parseFloat(cleaned);
+    const parsed = parseCurrencyInput(tempBudgetValue);
     if (!isNaN(parsed) && parsed >= 0) {
       onUpdateBudget(cat.name, parsed);
     }
@@ -123,6 +129,37 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Banner for categories excluded only in this month */}
+      {excludedCategoriesInCurrentMonth && excludedCategoriesInCurrentMonth.length > 0 && onRestoreCategoryForMonth && (
+        <div className="mx-4 sm:mx-5 my-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <span className="text-amber-800 dark:text-amber-300 font-semibold text-xs flex items-center gap-1.5">
+              <span>⚠️</span>
+              <span>{excludedCategoriesInCurrentMonth.length} categoria(s) oculta(s) apenas em {currentMonth}:</span>
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {excludedCategoriesInCurrentMonth.map((cat) => (
+                <span
+                  key={cat.id}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-amber-200 dark:border-amber-800 shadow-2xs"
+                >
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                  <span>{cat.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => onRestoreCategoryForMonth(cat)}
+                    className="text-teal-700 dark:text-teal-400 hover:underline font-bold text-[11px] ml-1 cursor-pointer"
+                    title={`Restaurar categoria "${cat.name}" no mês ${currentMonth}`}
+                  >
+                    Restaurar
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MOBILE CARDS VIEW (md:hidden) */}
       <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800">
@@ -246,11 +283,19 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                     {isEditing ? (
                       <div className="flex items-center gap-1 mt-0.5">
                         <input
-                          type="number"
+                          type="text"
+                          inputMode="decimal"
                           value={tempBudgetValue}
-                          onChange={(e) => setTempBudgetValue(e.target.value)}
+                          onChange={(e) => {
+                            const clean = e.target.value.replace(/[^0-9.,]/g, '');
+                            setTempBudgetValue(clean);
+                          }}
                           className="w-full text-xs font-bold p-1 border border-teal-600 rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-white min-w-0"
                           autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveBudget(cat);
+                            if (e.key === 'Escape') handleCancelEdit();
+                          }}
                         />
                         <button
                           onClick={() => handleSaveBudget(cat)}
@@ -435,11 +480,13 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                         <div className="flex items-center justify-end gap-1">
                           <span className="text-xs text-slate-400">R$</span>
                           <input
-                            type="number"
-                            step="10"
-                            min="0"
+                            type="text"
+                            inputMode="decimal"
                             value={tempBudgetValue}
-                            onChange={(e) => setTempBudgetValue(e.target.value)}
+                            onChange={(e) => {
+                              const clean = e.target.value.replace(/[^0-9.,]/g, '');
+                              setTempBudgetValue(clean);
+                            }}
                             autoFocus
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') handleSaveBudget(cat);
