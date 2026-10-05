@@ -183,12 +183,14 @@ export function formatBRL(value: number): string {
 }
 
 /**
- * Converte entradas numéricas com vírgula ou ponto (ex: "15,50", "15.50", "1.250,50") de forma segura
+ * Converte entradas numéricas com vírgula ou ponto (ex: "73", "73,00", "73.00", "1.250,50", "R$ 73,00")
+ * estritamente no padrão do Real Brasileiro (R$).
  */
 export function parseCurrencyInput(value: string | number): number {
   if (typeof value === 'number') return isNaN(value) ? 0 : value;
   if (!value) return 0;
-  const trimmed = String(value).trim();
+  // Remove prefixos como "R$", "r$" e espaços
+  let trimmed = String(value).trim().replace(/^r\$\s*/i, '').trim();
   if (!trimmed) return 0;
 
   // Ambos ponto e vírgula presentes (ex: 1.250,50 ou 1,250.50)
@@ -204,20 +206,41 @@ export function parseCurrencyInput(value: string | number): number {
     }
   }
 
-  // Apenas vírgula presente (ex: 15,50)
+  // Apenas vírgula presente (ex: "73,00" ou "15,50")
   if (trimmed.includes(',')) {
-    return parseFloat(trimmed.replace(',', '.'));
+    const commaParts = trimmed.split(',');
+    if (commaParts.length === 2) {
+      const intPart = commaParts[0].replace(/\D/g, '') || '0';
+      const decPart = commaParts[1].replace(/\D/g, '').slice(0, 2);
+      return parseFloat(`${intPart}.${decPart}`);
+    }
+    return parseFloat(trimmed.replace(/,/g, '.'));
   }
 
-  // Apenas pontos presentes
-  const dotCount = (trimmed.match(/\./g) || []).length;
-  if (dotCount > 1) {
-    // Múltiplos pontos como separador de milhar: 1.000.000 -> 1000000
-    return parseFloat(trimmed.replace(/\./g, ''));
+  // Apenas pontos presentes (ex: "73.00" ou "7.300")
+  if (trimmed.includes('.')) {
+    const dotCount = (trimmed.match(/\./g) || []).length;
+    if (dotCount > 1) {
+      // Múltiplos pontos: 1.000.000 -> 1000000
+      return parseFloat(trimmed.replace(/\./g, ''));
+    }
+    const parts = trimmed.split('.');
+    if (parts.length === 2) {
+      // Se houver 1 ou 2 dígitos após o ponto (ex: "73.00" ou "73.5"), foi digitado como decimal
+      if (parts[1].length <= 2) {
+        return parseFloat(`${parts[0].replace(/\D/g, '') || '0'}.${parts[1]}`);
+      }
+      // Se houver 3 dígitos após o ponto e poucos antes (ex: "7.300"), é milhar brasileiro: 7300
+      if (parts[1].length === 3 && parts[0].length <= 3) {
+        return parseFloat(trimmed.replace(/\./g, ''));
+      }
+    }
+    return parseFloat(trimmed);
   }
 
-  // Ponto único como decimal (ex: 15.50)
-  return parseFloat(trimmed);
+  // Número inteiro simples (ex: "73")
+  const parsedInt = parseFloat(trimmed);
+  return isNaN(parsedInt) ? 0 : parsedInt;
 }
 
 /**

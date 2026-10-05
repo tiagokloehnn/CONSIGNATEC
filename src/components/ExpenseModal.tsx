@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Check, Plus } from 'lucide-react';
 import { Expense, CategoryName, PaymentMethod, ExpenseStatus, CategoryItem } from '../types/finance';
-import { PAYMENT_METHODS, parseCurrencyInput } from '../utils/formatters';
+import { PAYMENT_METHODS, parseCurrencyInput, formatBRL } from '../utils/formatters';
 
 interface ExpenseModalProps {
   isOpen: boolean;
@@ -158,10 +158,31 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
                     const clean = e.target.value.replace(/[^0-9.,]/g, '');
                     setValorStr(clean);
                   }}
+                  onBlur={() => {
+                    if (valorStr.trim()) {
+                      const parsed = parseCurrencyInput(valorStr);
+                      if (parsed > 0) {
+                        setValorStr(
+                          parsed.toLocaleString('pt-BR', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
+                        );
+                      }
+                    }
+                  }}
                   placeholder="0,00"
                   className="w-full text-base sm:text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-10 pr-3 py-2 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-700 focus:border-transparent font-medium"
                 />
               </div>
+              {valorStr.trim() && parseCurrencyInput(valorStr) > 0 && (
+                <div className="flex items-center gap-1.5 mt-1 text-[11px] text-teal-700 dark:text-teal-400 font-semibold animate-fadeIn">
+                  <span>Valor reconhecido:</span>
+                  <span className="px-2 py-0.5 rounded-md bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-teal-900 dark:text-teal-200 font-bold">
+                    {formatBRL(parseCurrencyInput(valorStr))}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div>

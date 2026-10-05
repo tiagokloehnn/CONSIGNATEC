@@ -1,4 +1,5 @@
 import { Expense, CategoryName, PaymentMethod, ExpenseStatus, FinancialDiagnosis } from '../types/finance';
+import { parseCurrencyInput } from '../utils/formatters';
 
 export interface ParseExpenseResult {
   data: string;
@@ -32,20 +33,19 @@ export function clientHeuristicParse(
 ): ParseExpenseResult {
   const lower = text.toLowerCase();
 
-  // 1. Extract amount: e.g. R$ 180, 180 reais, R$180,50, 180.00, 180
+  // 1. Extract amount: e.g. R$ 180, 180 reais, R$180,50, 180.00, 180, 73,00
   let valor = 50;
   // Match patterns like R$ 180, 180 reais, 180,50, 180.00, etc.
-  const moneyRegex = /(?:r\$\s*|reais\s*|valor de\s*|^|\s)(\d+(?:[.,]\d{1,2})?)(?:\s*reais|\s*conto|\s*pila|\s*$|\s)/i;
+  const moneyRegex = /(?:r\$\s*|reais\s*|valor de\s*|^|\s)(\d+(?:\.\d{3})*(?:[.,]\d{1,2})?)(?:\s*reais|\s*conto|\s*pila|\s*$|\s)/i;
   const matchMoney = text.match(moneyRegex);
   if (matchMoney && matchMoney[1]) {
-    const rawNum = matchMoney[1].replace(',', '.');
-    const parsed = parseFloat(rawNum);
+    const parsed = parseCurrencyInput(matchMoney[1]);
     if (!isNaN(parsed) && parsed > 0) valor = parsed;
   } else {
     // Fallback: any standalone number in the string
-    const fallbackNum = text.match(/\b\d+(?:[.,]\d{1,2})?\b/);
+    const fallbackNum = text.match(/\b\d+(?:\.\d{3})*(?:[.,]\d{1,2})?\b/);
     if (fallbackNum) {
-      const parsed = parseFloat(fallbackNum[0].replace(',', '.'));
+      const parsed = parseCurrencyInput(fallbackNum[0]);
       if (!isNaN(parsed) && parsed > 0) valor = parsed;
     }
   }
@@ -261,6 +261,14 @@ export async function parseNaturalLanguageExpense(
     if (response.ok) {
       const data = await response.json();
       if (data && data.descricao && data.valor !== undefined) {
+        // Client safeguard against AI misreading Brazilian comma as thousands (e.g. 73,00 as 7300)
+        if (typeof data.valor === 'number' && data.valor >= 100) {
+          const div100 = data.valor / 100;
+          const divInt = Math.round(div100);
+          if (new RegExp(`(?:r\\$\\s*)?\\b${divInt}[,.]00\\b`, 'i').test(text)) {
+            data.valor = div100;
+          }
+        }
         return data as ParseExpenseResult;
       }
     }

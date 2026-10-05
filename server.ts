@@ -89,6 +89,53 @@ async function callGeminiWithFallback(params: {
   throw lastError;
 }
 
+// Helper: Parse Brazilian currency safely
+function parseBrazilianCurrency(value: string | number): number {
+  if (typeof value === 'number') return isNaN(value) ? 0 : value;
+  if (!value) return 0;
+  let trimmed = String(value).trim().replace(/^r\$\s*/i, '').trim();
+  if (!trimmed) return 0;
+
+  if (trimmed.includes('.') && trimmed.includes(',')) {
+    const lastDot = trimmed.lastIndexOf('.');
+    const lastComma = trimmed.lastIndexOf(',');
+    if (lastComma > lastDot) {
+      return parseFloat(trimmed.replace(/\./g, '').replace(',', '.'));
+    } else {
+      return parseFloat(trimmed.replace(/,/g, ''));
+    }
+  }
+
+  if (trimmed.includes(',')) {
+    const parts = trimmed.split(',');
+    if (parts.length === 2) {
+      const intP = parts[0].replace(/\D/g, '') || '0';
+      const decP = parts[1].replace(/\D/g, '').slice(0, 2);
+      return parseFloat(`${intP}.${decP}`);
+    }
+    return parseFloat(trimmed.replace(/,/g, '.'));
+  }
+
+  if (trimmed.includes('.')) {
+    const dotCount = (trimmed.match(/\./g) || []).length;
+    if (dotCount > 1) {
+      return parseFloat(trimmed.replace(/\./g, ''));
+    }
+    const parts = trimmed.split('.');
+    if (parts.length === 2) {
+      if (parts[1].length <= 2) {
+        return parseFloat(`${parts[0].replace(/\D/g, '') || '0'}.${parts[1]}`);
+      }
+      if (parts[1].length === 3 && parts[0].length <= 3) {
+        return parseFloat(trimmed.replace(/\./g, ''));
+      }
+    }
+    return parseFloat(trimmed);
+  }
+
+  return parseFloat(trimmed) || 0;
+}
+
 // Endpoint: AI Expense Parser
 app.post('/api/parse-expense', async (req, res) => {
   try {
@@ -106,7 +153,7 @@ app.post('/api/parse-expense', async (req, res) => {
     if (apiKey) {
       try {
         const response = await callGeminiWithFallback({
-          contents: `Você é um assistente financeiro especialista. Analise a frase do usuário descrevendo um gasto e extraia os campos obrigatórios.
+          contents: `Você é um assistente financeiro especialista em finanças brasileiras. Analise a frase do usuário descrevendo um gasto e extraia os campos obrigatórios.
 Data de referência atual (hoje): ${todayStr}.
 Frase: "${text}"
 
@@ -115,7 +162,13 @@ Regras:
 2. "forma_pagamento" DEVE ser estritamente uma destas opções: ${VALID_PAYMENTS.join(', ')}. Se não especificado, deduza pelo contexto ou use "PIX".
 3. "status" DEVE ser "Pago", "Pendente" ou "Agendado". Se o gasto já ocorreu (ex: "gastei", "comprei"), use "Pago". Se for conta futura ou a vencer, use "Pendente" ou "Agendado".
 4. "data" DEVE ser no formato ISO YYYY-MM-DD.
-5. "valor" DEVE ser numérico positivo em reais.`,
+5. "valor" DEVE ser numérico em reais (float).
+REGRA OBRIGATÓRIA SOBRE VALORES NO REAL BRASILEIRO (R$):
+- No Brasil, a vírgula é o separador decimal dos centavos!
+- "73,00" ou "73" são EXATAMENTE 73.0 reais (setenta e três reais). NUNCA converta "73,00" para 7300!
+- "15,50" significa 15.5 reais (quinze reais e cinquenta centavos).
+- "7.300,00" significa 7300.0 reais (sete mil e trezentos reais).
+- Portanto, se o usuário digitou "73,00", o valor retornado no JSON DEVE ser 73 (e JAMAIS 7300).`,
           config: {
             responseMimeType: 'application/json',
             responseSchema: {
@@ -134,6 +187,18 @@ Regras:
         });
 
         const parsed = JSON.parse(response.text || '{}');
+
+        // Safeguard: Check if LLM misread Brazilian comma decimal (e.g. "73,00" as 7300)
+        if (typeof parsed.valor === 'number' && parsed.valor >= 100) {
+          const div100 = parsed.valor / 100;
+          const divInt = Math.round(div100);
+          const regexDecimal = new RegExp(`(?:r\\$\\s*)?\\b${divInt}[,.]00\\b`, 'i');
+          if (regexDecimal.test(text)) {
+            console.log(`[Gemini Parser] Corrigindo valor de R$ ${parsed.valor} para R$ ${div100} baseado no texto brasileiro "${text}"`);
+            parsed.valor = div100;
+          }
+        }
+
         // Validate category & payment
         if (!categoryOptions.includes(parsed.categoria)) {
           parsed.categoria =
@@ -390,12 +455,11 @@ function findClosestCategory(str: string): string | null {
 function heuristicParse(text: string, today: string) {
   const lower = text.toLowerCase();
 
-  // Extract amount: e.g. R$ 85,50, 85 reais, 85.00, 85
+  // Extract amount: e.g. R$ 85,50, 85 reais, 85.00, 85, 73,00
   let valor = 50;
-  const matchMoney = text.match(/(?:r\$\s*|reais\s*|valor de\s*)?(\d+(?:[.,]\d{1,2})?)(?:\s*reais|\s*conto)?/i);
+  const matchMoney = text.match(/(?:r\$\s*|reais\s*|valor de\s*)?(\d+(?:\.\d{3})*(?:[.,]\d{1,2})?)(?:\s*reais|\s*conto)?/i);
   if (matchMoney && matchMoney[1]) {
-    const rawNum = matchMoney[1].replace(',', '.');
-    const parsed = parseFloat(rawNum);
+    const parsed = parseBrazilianCurrency(matchMoney[1]);
     if (!isNaN(parsed) && parsed > 0) valor = parsed;
   }
 
