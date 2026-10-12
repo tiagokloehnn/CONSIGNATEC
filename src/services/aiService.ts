@@ -152,15 +152,25 @@ export function clientHeuristicParse(
 export function clientHeuristicDiagnosis(
   income: number,
   totalExpenses: number,
-  categories: Array<{ name: string; budget: number; spent: number }>
+  categories: Array<{ name: string; budget: number; spent: number; classification?: string }>
 ): FinancialDiagnosis {
   const balance = income - totalExpenses;
-  const savingsRate = income > 0 ? (balance / income) * 100 : 0;
+  // Considera investimentos e reservas como economia
+  const investedAmount = (categories || []).reduce((sum, cat) => {
+    const isInvest =
+      cat.classification === 'investimentos' ||
+      cat.name?.toLowerCase().includes('investimento') ||
+      cat.name?.toLowerCase().includes('reserva') ||
+      cat.name?.toLowerCase().includes('aporte');
+    return isInvest ? sum + (cat.spent || 0) : sum;
+  }, 0);
+  const totalSavings = Math.max(0, investedAmount + balance);
+  const savingsRate = income > 0 ? (totalSavings / income) * 100 : 0;
 
   let healthScore = 78;
   let healthStatus: FinancialDiagnosis['healthStatus'] = 'Saudável';
 
-  if (balance < 0) {
+  if (balance < 0 && totalSavings === 0) {
     healthScore = 38;
     healthStatus = 'Crítico';
   } else if (savingsRate >= 20) {
@@ -194,8 +204,10 @@ export function clientHeuristicDiagnosis(
     healthScore,
     healthStatus,
     summary:
-      balance >= 0
-        ? `Seu orçamento está sob controle com saldo positivo de R$ ${balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} e taxa de poupança em ${savingsRate.toFixed(1)}%.`
+      totalSavings > 0
+        ? `Seu orçamento está sob controle com economia de R$ ${totalSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${investedAmount > 0 ? `R$ ${investedAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} investidos e ` : ''}saldo de R$ ${Math.max(0, balance).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}), taxa de economia em ${savingsRate.toFixed(1)}%.`
+        : balance >= 0
+        ? `Seu orçamento está equilibrado com saldo positivo de R$ ${balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`
         : `Alerta: Suas despesas superaram a receita mensal em R$ ${Math.abs(balance).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}, exigindo contingência imediata.`,
     rule50_30_20: {
       necessidades: {

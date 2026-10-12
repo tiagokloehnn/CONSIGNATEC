@@ -237,11 +237,25 @@ app.post('/api/diagnostico', async (req, res) => {
   try {
     const { income, totalExpenses, categories, recentExpenses } = req.body;
 
+    const investedAmount = (categories || []).reduce((sum: number, cat: any) => {
+      const isInvest =
+        cat.classification === 'investimentos' ||
+        cat.name?.toLowerCase().includes('investimento') ||
+        cat.name?.toLowerCase().includes('reserva') ||
+        cat.name?.toLowerCase().includes('aporte');
+      return isInvest ? sum + (cat.spent || 0) : sum;
+    }, 0);
+    const balance = income - totalExpenses;
+    const totalSavings = Math.max(0, investedAmount + balance);
+    const taxaEconomiaNum = income > 0 ? (totalSavings / income) * 100 : 0;
+
     const dataSummary = {
       rendaLiquida: income,
       totalGasto: totalExpenses,
-      saldo: income - totalExpenses,
-      taxaEconomia: income > 0 ? (((income - totalExpenses) / income) * 100).toFixed(1) + '%' : '0%',
+      saldoLivreEmConta: balance,
+      totalInvestidoNoMes: investedAmount,
+      totalEconomizadoGeral: totalSavings,
+      taxaEconomia: `${taxaEconomiaNum.toFixed(1)}% (Calculada considerando tanto os aportes em investimentos/reserva quanto o saldo restante)`,
       categorias: categories,
       ultimosLancamentos: (recentExpenses || []).slice(0, 10),
     };
@@ -251,6 +265,11 @@ app.post('/api/diagnostico', async (req, res) => {
         const response = await callGeminiWithFallback({
           contents: `Você é um Consultor Financeiro CFP® de alto nível. Analise o orçamento mensal do cliente com base nos dados fornecidos:
 ${JSON.stringify(dataSummary, null, 2)}
+
+ATENÇÃO IMPORTANTE SOBRE ECONOMIA E INVESTIMENTOS:
+- No planejamento financeiro, os aportes em Investimentos / Reserva e o Saldo Livre restante constituem a ECONOMIA do cliente.
+- A taxa de economia (${taxaEconomiaNum.toFixed(1)}%) reflete essa soma de investimentos e sobra de caixa.
+- Na regra 50-30-20, o pilar de Investimentos (20%) deve considerar o total aportado e poupado pelo cliente.
 
 Produza um diagnóstico completo, elegante e direto em formato JSON com a seguinte estrutura:
 {
@@ -521,12 +540,21 @@ function heuristicParse(text: string, today: string) {
 
 function heuristicDiagnosis(income: number, totalExpenses: number, categories: any[]) {
   const balance = income - totalExpenses;
-  const savingsRate = income > 0 ? (balance / income) * 100 : 0;
+  const investedAmount = (categories || []).reduce((sum: number, cat: any) => {
+    const isInvest =
+      cat.classification === 'investimentos' ||
+      cat.name?.toLowerCase().includes('investimento') ||
+      cat.name?.toLowerCase().includes('reserva') ||
+      cat.name?.toLowerCase().includes('aporte');
+    return isInvest ? sum + (cat.spent || 0) : sum;
+  }, 0);
+  const totalSavings = Math.max(0, investedAmount + balance);
+  const savingsRate = income > 0 ? (totalSavings / income) * 100 : 0;
   
   let healthScore = 75;
   let healthStatus = 'Saudável';
 
-  if (balance < 0) {
+  if (balance < 0 && totalSavings === 0) {
     healthScore = 35;
     healthStatus = 'Crítico';
   } else if (savingsRate >= 20) {

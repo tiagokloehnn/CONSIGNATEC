@@ -5,12 +5,14 @@ import { formatBRL, formatPercent, parseCurrencyInput } from '../utils/formatter
 interface KpiCardsProps {
   income: number;
   totalExpenses: number;
+  investedAmount?: number;
   onUpdateIncome: (newIncome: number) => void;
 }
 
 export const KpiCards: React.FC<KpiCardsProps> = ({
   income,
   totalExpenses,
+  investedAmount = 0,
   onUpdateIncome,
 }) => {
   const [isEditingIncome, setIsEditingIncome] = useState(false);
@@ -19,8 +21,11 @@ export const KpiCards: React.FC<KpiCardsProps> = ({
   const availableBalance = income - totalExpenses;
   const isNegativeBalance = availableBalance < 0;
 
-  // Taxa de Economia: (Saldo Disponível / Receita Total) * 100
-  const savingsRate = income > 0 ? (availableBalance / income) * 100 : 0;
+  // Economia Real: Total investido no mês + Saldo livre que restou na conta (deduzindo déficit se houver)
+  const totalSavings = Math.max(0, investedAmount + availableBalance);
+
+  // Taxa de Economia: (Economia Total / Receita Total) * 100
+  const savingsRate = income > 0 ? (totalSavings / income) * 100 : 0;
 
   const handleStartEdit = () => {
     setTempIncomeStr(income.toString().replace('.', ','));
@@ -231,14 +236,27 @@ export const KpiCards: React.FC<KpiCardsProps> = ({
                 ? 'Regular'
                 : savingsRate > 0
                 ? 'Baixo'
-                : 'Negativo'}
+                : '0%'}
             </span>
+          </div>
+
+          {/* Discriminação detalhada: Total economizado em R$ e quanto foi investimento */}
+          <div className="mt-1 text-[10px] text-slate-500 dark:text-slate-400 truncate">
+            {investedAmount > 0 ? (
+              <span title={`Investido: ${formatBRL(investedAmount)} | Saldo livre: ${formatBRL(Math.max(0, availableBalance))}`}>
+                <strong className="text-slate-700 dark:text-slate-300 font-semibold">{formatBRL(totalSavings)}</strong> total ({formatBRL(investedAmount)} investidos)
+              </span>
+            ) : (
+              <span>
+                <strong className="text-slate-700 dark:text-slate-300 font-semibold">{formatBRL(totalSavings)}</strong> saldo poupado
+              </span>
+            )}
           </div>
         </div>
 
         <div className="mt-2 sm:mt-3 pt-1 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">
           <span className="truncate">Meta: 20%</span>
-          <span className="text-[9px] sm:text-[10px] text-slate-400 dark:text-slate-500 shrink-0 ml-1">50/30/20</span>
+          <span className="text-[9px] sm:text-[10px] text-slate-400 dark:text-slate-500 shrink-0 ml-1">Investimentos + Saldo</span>
         </div>
       </div>
     </div>

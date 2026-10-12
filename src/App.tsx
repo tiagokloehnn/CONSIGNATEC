@@ -337,6 +337,28 @@ export default function App() {
     return activeExpenses.reduce((sum, item) => sum + item.valor, 0);
   }, [activeExpenses]);
 
+  // Total Investido no mês ativo (Aportes em categorias de investimento / reserva)
+  const investedAmount = useMemo(() => {
+    const investmentCategoryNames = new Set(
+      categories
+        .filter((c) => c.classification === 'investimentos')
+        .map((c) => c.name.toLowerCase())
+    );
+
+    return activeExpenses.reduce((sum, exp) => {
+      const catLower = (exp.categoria || '').toLowerCase();
+      if (
+        investmentCategoryNames.has(catLower) ||
+        catLower.includes('investimento') ||
+        catLower.includes('reserva') ||
+        catLower.includes('aporte')
+      ) {
+        return sum + exp.valor;
+      }
+      return sum;
+    }, 0);
+  }, [activeExpenses, categories]);
+
   const availableCategoryNames = useMemo(() => {
     return displayCategories.map((c) => c.name);
   }, [displayCategories]);
@@ -771,7 +793,7 @@ export default function App() {
         const spent = spendingByCategory[cat.name] || 0;
         const percent = budget > 0 ? (spent / budget) * 100 : 0;
         const status = getCategoryStatus(budget, spent);
-        return { name: cat.name, budget, spent, percent, status };
+        return { name: cat.name, budget, spent, percent, status, classification: cat.classification };
       });
 
       const result = await generateFinancialDiagnosis({
@@ -1034,6 +1056,7 @@ export default function App() {
           <KpiCards
             income={activeIncome}
             totalExpenses={totalExpenses}
+            investedAmount={investedAmount}
             onUpdateIncome={handleUpdateIncome}
           />
         </section>
